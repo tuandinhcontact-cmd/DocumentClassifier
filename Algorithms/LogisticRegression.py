@@ -1,46 +1,68 @@
-import math
+import numpy as np
+
 
 class LogisticRegression:
-    def __init__(self, lr = 0.01, n_iters = 1000):
+    def __init__(self, lr=0.01, n_iters=1000):
         self.lr = lr
         self.n_iters = n_iters
         self.w = None
-        self.b = 0
+        self.b = None
+        self.classes_ = None
 
     def fit(self, X, y):
-        n_samples, n_features = len(X), len(X[0])
-        self.w = [0.0 for _ in range(n_features)]
-        loss = 0.0
+        X = np.asarray(X, dtype=float)
+        y = np.asarray(y)
 
-        for _ in range(self.n_iters):
-            dw = [0.0] * n_features
-            db = 0.0
-            for (xi, yi) in zip(X, y):
-                linear_model = sum(wi * xi_j for wi, xi_j in zip(self.w, xi)) + self.b
-                y_pred = 1 / (1 + math.exp(-linear_model))
+        n_samples, n_features = X.shape
 
-                error = y_pred - yi
-                for j in range(n_features):
-                    dw[j] += (1 / n_samples) * error * xi[j]
+        self.classes_ = np.unique(y)
+        n_classes = len(self.classes_)
 
-                db += (1/n_samples) * error
-                loss += -(yi * math.log(y_pred) + (1 - yi) * math.log(1 - y_pred))
+        self.w = np.zeros((n_classes, n_features))
+        self.b = np.zeros(n_classes)
 
-            for j in range(n_features):
-                self.w[j] -= self.lr * dw[j]
+        for class_index, class_label in enumerate(self.classes_):
+            y_binary = (y == class_label).astype(float)
 
-            loss /= n_samples
-            print(loss)
-            self.b -= self.lr * db
+            w = np.zeros(n_features)
+            b = 0.0
+
+            for _ in range(self.n_iters):
+                linear_model = np.dot(X, w) + b
+                linear_model = np.clip(linear_model, -500, 500)
+
+                y_pred = 1 / (1 + np.exp(-linear_model))
+
+                error = y_pred - y_binary
+
+                dw = np.dot(X.T, error) / n_samples
+                db = np.mean(error)
+
+                w -= self.lr * dw
+                b -= self.lr * db
+
+            self.w[class_index] = w
+            self.b[class_index] = b
+
+        return self
+
+    def predict_proba(self, X):
+        X = np.asarray(X, dtype=float)
+
+        linear_model = np.dot(X, self.w.T) + self.b
+        linear_model = np.clip(linear_model, -500, 500)
+
+        probabilities = 1 / (1 + np.exp(-linear_model))
+
+        row_sums = probabilities.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1
+
+        probabilities = probabilities / row_sums
+
+        return probabilities
 
     def predict(self, X):
-        predictions = []
+        probabilities = self.predict_proba(X)
+        class_indices = np.argmax(probabilities, axis=1)
 
-        for xi in X:
-            linear_model = sum(wi * xi_j for wi, xi_j in zip(self.w, xi)) + self.b
-            y_pred = 1 / (1 + math.exp(-linear_model))
-
-            if (y_pred > 0.5): predictions.append(1)
-            else: predictions.append(0)
-
-        return predictions
+        return self.classes_[class_indices]
