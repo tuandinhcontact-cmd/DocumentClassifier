@@ -1,4 +1,4 @@
-class LinearSVM:
+class SupportVectorMachine:
     def __init__(self, lr=0.001, n_iters=1000, C=1.0):
         self.lr = lr
         self.n_iters = n_iters
