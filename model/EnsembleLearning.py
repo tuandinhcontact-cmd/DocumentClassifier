@@ -146,7 +146,6 @@ print(classification_report(y_test, y_pred, zero_division=0))
 
 param_grid = {
     "weights": [
-        [1, 1, 1, 1],
         [2, 1, 1, 1],
         [1, 2, 1, 1],
         [1, 1, 2, 1],
