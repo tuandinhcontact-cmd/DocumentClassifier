@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Category Cascade Classifier</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="background-grid"></div>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <h1>Cascade Classifier</h1>
+            </div>
+            <p class="subtitle">Trực quan hóa quá trình phân tầng nhị phân phân cấp cho hơn 182,000 dữ liệu tin tức</p>
+        </header>
+
+        <main class="grid-layout">
+            <!-- Left Panel: Input -->
+            <section class="card input-section">
+                <h2>Thử nghiệm tin tức mới</h2>
+                <p class="description">Điền tiêu đề và mô tả ngắn của tin tức để kiểm tra đường đi trong chuỗi Cascade.</p>
+                
+                <form id="classify-form">
+                    <div class="input-group">
+                        <label for="headline">Tiêu đề (Headline)</label>
+                        <input type="text" id="headline" placeholder="Nhập tiêu đề tin tức ở đây..." required autocomplete="off">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="short_description">Mô tả ngắn (Short Description)</label>
+                        <textarea id="short_description" rows="4" placeholder="Nhập phần mô tả ngắn của bài báo..." required></textarea>
+                    </div>
+
+                    <button type="submit" id="btn-submit">
+                        <span class="btn-text">Phân Loại Ngay</span>
+                        <div class="loader" id="loader"></div>
+                    </button>
+                </form>
+
+                <!-- Sample buttons to fill in data quickly -->
+                <div class="samples">
+                    <h3>Mẫu tin thử nghiệm nhanh:</h3>
+                    <div class="sample-tags">
+                        <button class="sample-btn" data-headline="New Apple Macbook Pro with M5 Chip Leaks" data-desc="Tech analysts suggest that Apple is gearing up to launch its next-generation Silicon processor earlier than expected with massive performance upgrades.">Tech & Science</button>
+                        <button class="sample-btn" data-headline="Senate Passes Historic Climate Change Infrastructure Bill" data-desc="The bipartisan legislation allocates billions of dollars for clean energy and carbon reduction programs over the next decade.">Politics</button>
+                        <button class="sample-btn" data-headline="Los Angeles Lakers Clinch Dramatic Overtime Victory" data-desc="With a buzzer-beating three-pointer in the final seconds of overtime, the Lakers secure their spot in the upcoming playoffs.">Sports</button>
+                        <button class="sample-btn" data-headline="Top 10 Easy Summer Dessert Recipes to Cool Down" data-desc="From no-bake fruit tarts to homemade mango ice creams, these delicious desserts will make your hot summer days much sweeter.">Food & Drinks</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results & Visualization -->
+            <section class="result-section">
+                <!-- Result Badge -->
+                <div class="card result-card hidden" id="result-card">
+                    <div class="result-header">
+                        <span>Kết quả phân loại:</span>
+                        <div class="category-badge" id="category-badge">Tech & Science</div>
+                    </div>
+                    <div class="cleaned-text-box">
+                        <strong>Văn bản sau khi làm sạch (Cleaned text):</strong>
+                        <p id="cleaned-text-val"></p>
+                    </div>
+                </div>
+
+                <!-- Cascade Timeline -->
+                <div class="card timeline-card hidden" id="timeline-card">
+                    <h2>Đường đi phân tầng (Cascade Traversal Path)</h2>
+                    <p class="description">Mô tả chi tiết quá trình kiểm thử tuần tự của các bộ phân loại nhị phân:</p>
+                    
+                    <div class="timeline" id="timeline">
+                        <!-- Will be populated dynamically by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="card empty-card" id="empty-card">
+                    <div class="empty-icon">🔍</div>
+                    <h3>Chưa có dữ liệu phân loại</h3>
+                    <p>Điền thông tin ở bảng bên trái hoặc chọn mẫu thử nghiệm nhanh để xem trực quan hóa đường đi Cascade.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Phát triển bởi Antigravity AI Code Assistant &copy; 2026. Tất cả mã nguồn mô hình đã được tối ưu hóa.</p>
+        </footer>
+    </div>
+
+    <script src="static/app.js"></script>
+</body>
+</html>
