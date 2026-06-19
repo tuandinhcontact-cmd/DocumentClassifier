@@ -180,7 +180,7 @@ def main():
     SUBSET_SIZE = 30000
     MAX_FEATURES = 20000
     
-    dataset_path = "merged_cleaned_dataset.csv"
+    dataset_path = "data/merged_cleaned_dataset.csv"
     if not os.path.exists(dataset_path):
         print(f"Error: Missing dataset file {dataset_path}.")
         return
