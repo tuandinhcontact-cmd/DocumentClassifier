@@ -9,7 +9,7 @@ Hệ thống có khả năng phân loại bài báo vào **14 chủ đề khác 
 ## 🚀 Tính năng nổi bật & Thành tựu
 - **Thuật toán tự phát triển 100%:** Các thuật toán `CustomLogisticRegression` (với Adam Optimizer) và `CustomMultinomialNB` (với Log-Sum-Exp Trick) được lập trình hoàn toàn từ con số 0.
 - **Kiến trúc 3-Step Cascade:** Cô lập và "bóc tách" dần các nhãn áp đảo (Tech & Politics chiếm >70% dữ liệu), giúp mô hình tập trung bảo vệ độ chính xác cho các nhãn thiểu số còn lại.
-- **Ensemble OVR Soft-Voting:** Kết hợp ma trận xác suất L1 Normalization của mô hình NB và mô hình LR đa lớp (nhân bản 12 OVR) để bù trừ sai số.
+- **Ensemble OVR Soft-Voting (Hội đồng Tam Thánh):** Kết hợp ma trận xác suất của 3 mô hình tự code độc lập: MultinomialNB, Logistic Regression OVR (Adam), và Linear SVM OVR (Platt Scaling) để đưa ra phán quyết cuối cùng hoàn hảo nhất.
 - **Hiệu năng xuất sắc:** 
   - Đạt độ chính xác **76.77%** trên 182,000 bài báo chỉ với phương pháp TF-IDF truyền thống. 
   - **Đánh bại thuật toán tối ưu C++** của thư viện `scikit-learn` về cả tốc độ hội tụ (train xong trong vòng 90 giây) lẫn độ chính xác.

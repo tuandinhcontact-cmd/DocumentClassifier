@@ -38,7 +38,7 @@ Máy tính không hiểu chữ cái, do đó toàn bộ văn bản được mã 
 Hệ thống sử dụng **Cấu trúc 3-Step Hybrid Cascade** (Phân loại thác nước 3 bước):
 - **Bước 1:** Dùng `CustomMultinomialNB` lọc toàn bộ nhãn `Tech & Science` ra khỏi tệp dữ liệu.
 - **Bước 2:** Dùng `CustomMultinomialNB` lọc tiếp nhãn `Politics and society`.
-- **Bước 3:** 12 nhãn thiểu số còn lại được chuyển cho bộ **CustomMultiClassVotingClassifier**. Bộ máy này trung bình cộng xác suất từ 1 mô hình NB và 12 mô hình LR để đưa ra phán quyết cuối cùng.
+- **Bước 3:** 12 nhãn thiểu số còn lại được chuyển cho bộ **CustomMultiClassVotingClassifier**. Bộ máy này trung bình cộng xác suất từ 1 mô hình NB, 12 mô hình LR, và 12 mô hình SVM (đã qua hiệu chuẩn Platt Scaling) để đưa ra phán quyết cuối cùng.
 
 ---
 
@@ -68,7 +68,14 @@ Khi cần trả về giá trị xác suất (Probability) từ không gian Log, 
 - $P(y) = e^{\text{log\_probs} - M} / \sum e^{\text{log\_probs} - M}$
 Điều này giúp mô hình bay Bayes tự viết của chúng tôi hoàn toàn miễn nhiễm với lỗi toán học của hệ thống phần cứng.
 
-### 4.3. One-Vs-Rest Classification (Lớp `CustomOneVsRestClassifier`)
+### 4.3. Linear SVM và Hiệu chuẩn Platt Scaling (Lớp `CustomLinearSVM`)
+Khác với LR tối ưu xác suất, SVM tối ưu "Khoảng cách ranh giới lớn nhất" (Maximum Margin) bằng Hinge Loss thông qua thuật toán giải tích Pegasos SGD. 
+Do SVM gốc không xuất ra xác suất (không thể tham gia Soft-Voting), chúng tôi đã lập trình thuật toán **Platt Scaling**:
+- Tính toán khoảng cách cứng $f(x) = w^T x + b$ cho toàn bộ điểm dữ liệu.
+- Đưa các khoảng cách này đi qua một mô hình Logistic Regression phụ trợ $P(y=1|x) = \frac{1}{1 + e^{-(A \cdot f(x) + B)}}$. 
+Điều này ép SVM phải nhả ra dải phân bố xác suất mượt mà từ 0 đến 1, giúp nó đủ tiêu chuẩn đứng vào hàng ngũ Soft-Voting ở Bước 3.
+
+### 4.4. One-Vs-Rest Classification (Lớp `CustomOneVsRestClassifier`)
 Logistic Regression tự nhiên chỉ phân biệt được 2 lớp (Nhị phân 0-1). Để giúp nó phân loại 12 nhãn ở Bước 3, chúng tôi lập trình thuật toán OVR.
 - **Quy trình hoạt động:** Hàm `fit` sẽ duyệt qua $K=12$ nhãn. Ở mỗi vòng lặp, nó sao chép nhân bản một mô hình Logistic Regression, coi nhãn hiện tại là $1$ và 11 nhãn còn lại là $0$. Do đó sinh ra 12 mô hình nhị phân độc lập.
 - **Chuẩn hóa xác suất (L1 Normalization):** Khi gọi `predict_proba`, 12 mô hình sẽ trả về 12 giá trị xác suất (không cộng lại bằng 1). Hàm sẽ tự động tính tổng của 12 xác suất trên từng hàng, và chia ngược lại từng ô cho tổng đó để đảm bảo chuẩn phân bố xác suất L1.
@@ -80,11 +87,13 @@ Thuật toán phân loại thác nước (Cascade) là trái tim của dự án,
   - Tầng 2 hấp thụ $x \in X'$ nếu $P(\text{Politics}|x) \ge 0.5$. Dữ liệu còn lại $X'' = X' \setminus X_{\text{Politics}}$.
   - Tầng 3 nhận $X''$ để phân rã qua hội đồng OVR.
 
-### 4.5. Ensemble Soft-Voting (Lớp `CustomMultiClassVotingClassifier`)
-Thay vì để 1 thuật toán đưa ra phán quyết cuối cùng (Gây ra thiên lệch), chúng tôi thiết kế hội đồng bầu chọn mềm.
-- Cho ma trận xác suất từ MultinomialNB là $P_A$ (shape $N \times 12$).
-- Ma trận xác suất từ OVR Logistic Regression là $P_B$ (shape $N \times 12$).
-- Soft-Voting thực hiện tính trung bình cộng từng điểm dữ liệu: $P_{\text{final}} = \frac{P_A + P_B}{2}$. Nhãn cuối cùng là `argmax` của $P_{\text{final}}$. Điều này bù trừ nhược điểm của cả hai mô hình (NB quá tự tin, LR quá bảo thủ).
+### 4.6. Ensemble Soft-Voting (Lớp `CustomMultiClassVotingClassifier`)
+Thay vì để 1 thuật toán đưa ra phán quyết cuối cùng (Gây ra thiên lệch), chúng tôi thiết kế hội đồng bầu chọn mềm. Hội đồng "Tam Thánh" bao gồm:
+- Ma trận xác suất từ MultinomialNB là $P_A$.
+- Ma trận xác suất từ OVR Logistic Regression là $P_B$.
+- Ma trận xác suất từ OVR Linear SVM (Platt) là $P_C$.
+- Soft-Voting thực hiện tính trung bình cộng từng điểm dữ liệu: $P_{\text{final}} = \frac{P_A + P_B + P_C}{3}$. 
+Nhãn cuối cùng là `argmax` của $P_{\text{final}}$. Điều này bù trừ nhược điểm của tất cả các mô hình, tạo ra một chốt chặn an toàn hoàn hảo về mặt lý thuyết học máy.
 
 ---
 
