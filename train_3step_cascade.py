@@ -12,7 +12,6 @@ from sklearn.metrics import accuracy_score, classification_report, f1_score
 from custom_models.logistic_regression import CustomLogisticRegression
 from custom_models.multinomial_nb import CustomMultinomialNB
 from custom_models.linear_svm import CustomLinearSVM
-from custom_models.random_forest import CustomRandomForest
 
 class CustomOneVsRestClassifier:
     def __init__(self, base_estimator):
@@ -214,23 +213,23 @@ def main():
     lr = CustomLogisticRegression(solver='adam', lr=0.01, epochs=100, class_weight='balanced')
     mnb = CustomMultinomialNB(alpha=1.0)
     svm = CustomLinearSVM(lr=0.1, lambda_param=0.01, epochs=20)
-    rf = CustomRandomForest(n_estimators=10, max_depth=12, min_samples_split=2, n_jobs=-1)
     
     binary_estimators = [
         ('LogisticRegression', lr),
         ('MultinomialNB', mnb),
-        ('LinearSVM', svm),
-        ('RandomForest', rf)
+        ('LinearSVM', svm)
     ]
     
     # Custom OVR Multi-class models for Step 3
     lr_ovr = CustomOneVsRestClassifier(base_estimator=CustomLogisticRegression(solver='adam', lr=0.01, epochs=100, class_weight='balanced'))
+    svm_ovr = CustomOneVsRestClassifier(base_estimator=CustomLinearSVM(lr=0.1, lambda_param=0.01, epochs=20))
     mnb_mc = CustomMultinomialNB(alpha=1.0)
     
     # Soft Voting Multi-class ensemble
     multiclass_estimator = CustomMultiClassVotingClassifier(estimators=[
         ('MultinomialNB', mnb_mc),
-        ('LogisticRegression_OVR', lr_ovr)
+        ('LogisticRegression_OVR', lr_ovr),
+        ('LinearSVM_OVR', svm_ovr)
     ])
     
     # 5. Fit 3-Step Cascade Classifier
