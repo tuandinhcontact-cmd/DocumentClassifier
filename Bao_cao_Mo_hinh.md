@@ -68,9 +68,13 @@ Khi cần trả về giá trị xác suất (Probability) từ không gian Log, 
 - $P(y) = e^{\text{log\_probs} - M} / \sum e^{\text{log\_probs} - M}$
 Điều này giúp mô hình bay Bayes tự viết của chúng tôi hoàn toàn miễn nhiễm với lỗi toán học của hệ thống phần cứng.
 
-### 4.3. Linear SVM và Hiệu chuẩn Platt Scaling (Lớp `CustomLinearSVM`)
-Khác với LR tối ưu xác suất, SVM tối ưu "Khoảng cách ranh giới lớn nhất" (Maximum Margin) bằng Hinge Loss thông qua thuật toán giải tích Pegasos SGD. 
-Do SVM gốc không xuất ra xác suất (không thể tham gia Soft-Voting), chúng tôi đã lập trình thuật toán **Platt Scaling**:
+### 4.3. Linear SVM với Adam Optimizer và Hiệu chuẩn Platt Scaling (Lớp `CustomLinearSVM`)
+Khác với LR tối ưu xác suất, SVM tối ưu "Khoảng cách ranh giới lớn nhất" (Maximum Margin) bằng hàm Hinge Loss. Ban đầu, mô hình sử dụng Pegasos SGD nhưng bị sụp đổ (Accuracy 8%) do mất cân bằng dữ liệu và tốc độ hội tụ chậm trên ma trận thưa. 
+Để giải quyết, chúng tôi đã tiến hành một nâng cấp mang tính đột phá: 
+- Lắp đặt **Adam Optimizer** thay cho SGD, giúp mô hình hội tụ cực nhanh trong 100 epochs.
+- Lập trình cơ chế **Cân bằng nhãn (`class_weight='balanced'`)** tương tự như LR, giúp nhân hệ số phạt Gradient cho nhãn thiểu số, ngăn chặn hiện tượng Linear SVM bị "kẹt" ở dự đoán nhãn đa số.
+
+Do SVM gốc không xuất ra xác suất (không thể tham gia Soft-Voting), chúng tôi tiếp tục áp dụng thuật toán **Platt Scaling**:
 - Tính toán khoảng cách cứng $f(x) = w^T x + b$ cho toàn bộ điểm dữ liệu.
 - Đưa các khoảng cách này đi qua một mô hình Logistic Regression phụ trợ $P(y=1|x) = \frac{1}{1 + e^{-(A \cdot f(x) + B)}}$. 
 Điều này ép SVM phải nhả ra dải phân bố xác suất mượt mà từ 0 đến 1, giúp nó đủ tiêu chuẩn đứng vào hàng ngũ Soft-Voting ở Bước 3.

@@ -212,7 +212,7 @@ def main():
     print("Initializing estimators...")
     lr = CustomLogisticRegression(solver='adam', lr=0.01, epochs=100, class_weight='balanced')
     mnb = CustomMultinomialNB(alpha=1.0)
-    svm = CustomLinearSVM(lr=0.1, lambda_param=0.01, epochs=20)
+    svm = CustomLinearSVM(lr=0.01, lambda_param=0.01, epochs=100, class_weight='balanced')
     
     binary_estimators = [
         ('LogisticRegression', lr),
@@ -222,7 +222,7 @@ def main():
     
     # Custom OVR Multi-class models for Step 3
     lr_ovr = CustomOneVsRestClassifier(base_estimator=CustomLogisticRegression(solver='adam', lr=0.01, epochs=100, class_weight='balanced'))
-    svm_ovr = CustomOneVsRestClassifier(base_estimator=CustomLinearSVM(lr=0.1, lambda_param=0.01, epochs=20))
+    svm_ovr = CustomOneVsRestClassifier(base_estimator=CustomLinearSVM(lr=0.01, lambda_param=0.01, epochs=100, class_weight='balanced'))
     mnb_mc = CustomMultinomialNB(alpha=1.0)
     
     # Soft Voting Multi-class ensemble
