@@ -70,9 +70,17 @@ class CustomMultiClassVotingClassifier:
         return self.classes[np.argmax(probs, axis=1)]
 
 class ThreeStepCascadeClassifier:
-    def __init__(self, binary_estimators, multiclass_estimator):
+    def __init__(self, binary_estimators, multiclass_estimator, max_features_step1=40000, max_features_step2=40000, max_features_step3=20000):
         self.binary_estimators = binary_estimators
         self.multiclass_estimator = multiclass_estimator
+        self.max_features_step1 = max_features_step1
+        self.max_features_step2 = max_features_step2
+        self.max_features_step3 = max_features_step3
+        
+        self.vectorizer_step1 = None
+        self.vectorizer_step2 = None
+        self.vectorizer_step3 = None
+        
         self.step1_model = None
         self.step2_model = None
         self.step3_model = None
@@ -103,8 +111,8 @@ class ThreeStepCascadeClassifier:
         best_model.fit(X, y)
         return best_model
 
-    def fit(self, X, y):
-        current_X = X
+    def fit(self, X_raw, y):
+        current_X_raw = np.array(X_raw)
         current_y = np.array(y)
         
         # Step 1: Tech & Science
@@ -112,10 +120,14 @@ class ThreeStepCascadeClassifier:
         y_bin1 = (current_y == self.target1).astype(int)
         
         start_step1 = time.time()
-        self.step1_model = self._select_best_binary(current_X, y_bin1, self.target1)
+        print(f"  Fitting Vectorizer Step 1 with max_features={self.max_features_step1}...")
+        self.vectorizer_step1 = TfidfVectorizer(ngram_range=(1, 2), max_features=self.max_features_step1)
+        X_step1 = self.vectorizer_step1.fit_transform(current_X_raw)
+        
+        self.step1_model = self._select_best_binary(X_step1, y_bin1, self.target1)
         
         mask1 = (y_bin1 == 0)
-        current_X = current_X[mask1]
+        current_X_raw = current_X_raw[mask1]
         current_y = current_y[mask1]
         print(f"Step 1 Trained in {time.time() - start_step1:.2f}s. Remaining samples: {len(current_y)}")
         
@@ -124,29 +136,40 @@ class ThreeStepCascadeClassifier:
         y_bin2 = (current_y == self.target2).astype(int)
         
         start_step2 = time.time()
-        self.step2_model = self._select_best_binary(current_X, y_bin2, self.target2)
+        print(f"  Fitting Vectorizer Step 2 with max_features={self.max_features_step2}...")
+        self.vectorizer_step2 = TfidfVectorizer(ngram_range=(1, 2), max_features=self.max_features_step2)
+        X_step2 = self.vectorizer_step2.fit_transform(current_X_raw)
+        
+        self.step2_model = self._select_best_binary(X_step2, y_bin2, self.target2)
         
         mask2 = (y_bin2 == 0)
-        current_X = current_X[mask2]
+        current_X_raw = current_X_raw[mask2]
         current_y = current_y[mask2]
         print(f"Step 2 Trained in {time.time() - start_step2:.2f}s. Remaining samples: {len(current_y)}")
         
-        # Step 3: Multiclass for remaining 12 classes
-        print(f"\n--- Step 3: Multi-class Classification for remaining 12 classes ---")
+        # Step 3: Multiclass for remaining classes
+        print(f"\n--- Step 3: Multi-class Classification for remaining classes ---")
         start_step3 = time.time()
+        print(f"  Fitting Vectorizer Step 3 with max_features={self.max_features_step3}...")
+        self.vectorizer_step3 = TfidfVectorizer(ngram_range=(1, 2), max_features=self.max_features_step3)
+        X_step3 = self.vectorizer_step3.fit_transform(current_X_raw)
+        
         self.step3_model = copy.deepcopy(self.multiclass_estimator)
-        self.step3_model.fit(current_X, current_y)
+        self.step3_model.fit(X_step3, current_y)
+        self.classes_order = list(self.step3_model.classes)
         print(f"Step 3 Trained in {time.time() - start_step3:.2f}s.")
         
-        print("\nSuccessfully trained 3-Step Cascade Classifier with Global TF-IDF!")
+        print("\nSuccessfully trained 3-Step Cascade Classifier with Local TF-IDF!")
         
-    def predict(self, X):
-        num_samples = X.shape[0]
+    def predict(self, X_raw):
+        X_raw = np.array(X_raw)
+        num_samples = len(X_raw)
         predictions = np.full(num_samples, "UNKNOWN", dtype=object)
         classified = np.zeros(num_samples, dtype=bool)
         
         # Step 1
-        preds1 = self.step1_model.predict(X)
+        X_step1 = self.vectorizer_step1.transform(X_raw)
+        preds1 = self.step1_model.predict(X_step1)
         is_target1 = (preds1 == 1)
         predictions[is_target1] = self.target1
         classified[is_target1] = True
@@ -154,7 +177,8 @@ class ThreeStepCascadeClassifier:
         # Step 2
         unclassified_idx = np.where(~classified)[0]
         if len(unclassified_idx) > 0:
-            X_step2 = X[unclassified_idx]
+            X_raw_step2 = X_raw[unclassified_idx]
+            X_step2 = self.vectorizer_step2.transform(X_raw_step2)
             preds2 = self.step2_model.predict(X_step2)
             is_target2 = (preds2 == 1)
             
@@ -165,7 +189,8 @@ class ThreeStepCascadeClassifier:
         # Step 3
         unclassified_idx = np.where(~classified)[0]
         if len(unclassified_idx) > 0:
-            X_step3 = X[unclassified_idx]
+            X_raw_step3 = X_raw[unclassified_idx]
+            X_step3 = self.vectorizer_step3.transform(X_raw_step3)
             preds3 = self.step3_model.predict(X_step3)
             predictions[unclassified_idx] = preds3
             classified[unclassified_idx] = True
@@ -202,13 +227,7 @@ def main():
         X, y, test_size=0.2, random_state=42, stratify=y
     )
     
-    # 3. TF-IDF vectorization
-    print("Vector hóa văn bản bằng TF-IDF...")
-    vectorizer = TfidfVectorizer(ngram_range=(1, 2), max_features=MAX_FEATURES)
-    X_train = vectorizer.fit_transform(X_train_raw)
-    X_test = vectorizer.transform(X_test_raw)
-    
-    # 4. Initialize optimized custom estimators
+    # 3. Initialize optimized custom estimators
     print("Initializing estimators...")
     lr = CustomLogisticRegression(solver='adam', lr=0.01, epochs=100, class_weight='balanced')
     mnb = CustomMultinomialNB(alpha=1.0)
@@ -232,17 +251,20 @@ def main():
         ('LinearSVM_OVR', svm_ovr)
     ])
     
-    # 5. Fit 3-Step Cascade Classifier
+    # 4. Fit 3-Step Cascade Classifier with Local TF-IDF
     start_time = time.time()
     cascade_custom = ThreeStepCascadeClassifier(
         binary_estimators=binary_estimators, 
-        multiclass_estimator=multiclass_estimator
+        multiclass_estimator=multiclass_estimator,
+        max_features_step1=40000,
+        max_features_step2=40000,
+        max_features_step3=20000
     )
-    cascade_custom.fit(X_train, y_train)
+    cascade_custom.fit(X_train_raw, y_train)
     
-    # 6. Predict and evaluate
+    # 5. Predict and evaluate
     print("\nPredicting on test set...")
-    y_pred = cascade_custom.predict(X_test)
+    y_pred = cascade_custom.predict(X_test_raw)
     elapsed_time = time.time() - start_time
     
     acc = accuracy_score(y_test, y_pred)
@@ -255,11 +277,10 @@ def main():
     print("\nClassification Report:")
     print(classification_report(y_test, y_pred))
     
-    # 7. Export custom model to pickle file
+    # 6. Export custom model to pickle file
     print("\nSaving 3-step cascade model data to cascade_model.pkl...")
     model_data = {
         'model': cascade_custom,
-        'vectorizer': vectorizer,
         'classes_order': cascade_custom.classes_order
     }
     with open("cascade_model.pkl", "wb") as f:

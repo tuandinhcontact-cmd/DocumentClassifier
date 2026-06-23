@@ -112,14 +112,12 @@ def predict():
         vectorizer = model_data['vectorizer']
         X_vector = vectorizer.transform([cleaned])
     elif is_3step:
-        vectorizer = model_data['vectorizer']
-        X_vector = vectorizer.transform([cleaned])
-        
-        final_class = cascade_clf.predict(X_vector)[0]
+        final_class = cascade_clf.predict([cleaned])[0]
         path = []
         
         # Step 1
-        prob1 = cascade_clf.step1_model.predict_proba(X_vector)[0][1]
+        X_vector1 = cascade_clf.vectorizer_step1.transform([cleaned])
+        prob1 = cascade_clf.step1_model.predict_proba(X_vector1)[0][1]
         if prob1 >= 0.5:
             path.append({
                 'stage': 1, 'class_name': cascade_clf.target1, 'probability': float(prob1),
@@ -134,7 +132,8 @@ def predict():
             })
             
             # Step 2
-            prob2 = cascade_clf.step2_model.predict_proba(X_vector)[0][1]
+            X_vector2 = cascade_clf.vectorizer_step2.transform([cleaned])
+            prob2 = cascade_clf.step2_model.predict_proba(X_vector2)[0][1]
             if prob2 >= 0.5:
                 path.append({
                     'stage': 2, 'class_name': cascade_clf.target2, 'probability': float(prob2),
@@ -149,8 +148,9 @@ def predict():
                 })
                 
                 # Step 3
+                X_vector3 = cascade_clf.vectorizer_step3.transform([cleaned])
                 import numpy as np
-                probs3 = cascade_clf.step3_model.predict_proba(X_vector)[0]
+                probs3 = cascade_clf.step3_model.predict_proba(X_vector3)[0]
                 max_prob3 = float(np.max(probs3))
                 path.append({
                     'stage': 3, 'class_name': final_class, 'probability': max_prob3,
