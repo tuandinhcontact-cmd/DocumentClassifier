@@ -8,8 +8,8 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
-INPUT_PATH = BASE_DIR / "data1" / "data_preparation" / "final_data1.csv"
-OUTPUT_PATH = BASE_DIR / "data1" / "data_preparation" / "final_data_14_custom_labels.csv"
+INPUT_PATH = BASE_DIR / "data" / "data_preparation" / "final_data1.csv"
+OUTPUT_PATH = BASE_DIR / "data" / "data_preparation" / "final_data_14_custom_labels.csv"
 
 
 # =========================
@@ -113,18 +113,19 @@ print(f"\nSố lượng nhãn hiện tại: {df['category'].nunique()} nhãn")
 # UNDERSAMPLING
 # =========================
 
-MAX_SAMPLES = 4000
+MAX_SAMPLES = None  # Đặt None để không giới hạn số lượng mẫu mỗi nhãn (không cắt tỉa)
 
-balanced_groups = []
-
-for category_name, group in df.groupby("category"):
-    sampled_group = group.sample(
-        n=min(len(group), MAX_SAMPLES),
-        random_state=42
-    )
-    balanced_groups.append(sampled_group)
-
-df_balanced = pd.concat(balanced_groups)
+if MAX_SAMPLES is not None:
+    balanced_groups = []
+    for category_name, group in df.groupby("category"):
+        sampled_group = group.sample(
+            n=min(len(group), MAX_SAMPLES),
+            random_state=42
+        )
+        balanced_groups.append(sampled_group)
+    df_balanced = pd.concat(balanced_groups)
+else:
+    df_balanced = df.copy()
 
 df_balanced = df_balanced.sample(
     frac=1,
@@ -136,10 +137,13 @@ df_balanced = df_balanced.sample(
 # CHECK DISTRIBUTION
 # =========================
 
-print(f"\nPhân bố dữ liệu 14 nhãn sau khi cắt tỉa tối đa {MAX_SAMPLES} mẫu mỗi nhãn:")
+if MAX_SAMPLES is not None:
+    print(f"\nPhân bố dữ liệu 14 nhãn sau khi cắt tỉa tối đa {MAX_SAMPLES} mẫu mỗi nhãn:")
+else:
+    print("\nPhân bố dữ liệu 14 nhãn (không giới hạn số lượng mẫu):")
 print(df_balanced["category"].value_counts())
 
-print(f"\nTổng số bài báo sau khi cân bằng: {len(df_balanced)}")
+print(f"\nTổng số bài báo sau khi xử lý: {len(df_balanced)}")
 
 
 # =========================

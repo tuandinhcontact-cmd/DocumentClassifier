@@ -17,7 +17,7 @@ def is_valid_article(item):
     
     return True
 
-def convert_json_to_csv(json_file_path, csv_file_path):
+def convert_json_to_csv(json_file_path, csv_file_path, max_samples=None):
     """
     Chuyển đổi từ file JSONL gốc sang file CSV sạch.
     Chỉ giữ lại 3 cột thiết yếu: headline, short_description, category.
@@ -46,6 +46,11 @@ def convert_json_to_csv(json_file_path, csv_file_path):
         if not data:
             print("❌ Lỗi: Không tìm thấy dữ liệu hợp lệ sau khi lọc.")
             return False
+            
+        # Giới hạn số lượng mẫu nếu max_samples không phải là None
+        if max_samples is not None:
+            print(f"⚠️ Giới hạn số lượng mẫu tối đa: {max_samples:,}")
+            data = data[:max_samples]
             
         # In báo cáo chi tiết ra Terminal
         print("-" * 50)
@@ -79,19 +84,18 @@ def main():
     # Sử dụng đường dẫn tuyệt đối để chống lỗi "File not found" khi chạy ở Terminal khác thư mục
     current_dir = os.path.dirname(os.path.abspath(__file__))
     
-    json_file_path = os.path.join(current_dir, "input.json")
-    
-    # Đặt tên file là final_data.csv để tương thích với các bước tiếp theo trong dự án của bạn
-    csv_file_path = os.path.join(current_dir, "final_data1.csv") 
+    json_file_path = os.path.abspath(os.path.join(current_dir, "..", "dataset gốc", "News_Category_Dataset_v3_ordered.json"))
+    csv_file_path = os.path.join(current_dir, "News_Category_Dataset_v3_ordered.csv") 
     
     print(f"Đang đọc dữ liệu từ: {json_file_path} ...")
     
     if not os.path.exists(json_file_path):
         print(f"❌ Lỗi: Không tìm thấy file gốc tại đường dẫn:\n{json_file_path}")
-        print("Vui lòng đảm bảo file 'input.json' nằm cùng thư mục với file 'convert.py'.")
         return
     
-    convert_json_to_csv(json_file_path, csv_file_path)
+    # Cấu hình giới hạn số lượng mẫu (None nghĩa là không giới hạn)
+    MAX_SAMPLES = None
+    convert_json_to_csv(json_file_path, csv_file_path, max_samples=MAX_SAMPLES)
 
 if __name__ == "__main__":
     main()
