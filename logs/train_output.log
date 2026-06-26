@@ -1,0 +1,61 @@
+=== Training 3-Step Hybrid Cascade Classifier ===
+Reading dataset...
+Initializing estimators...
+
+--- Step 1: Binary Classification for 'Tech & Science' vs Rest ---
+  Fitting Vectorizer Step 1 with max_features=40000...
+  Selecting best model for Tech & Science...
+    - LogisticRegression: F1=0.7230
+    - MultinomialNB: F1=0.7472
+    - LinearSVM: F1=0.7171
+  -> Best model for Tech & Science is MultinomialNB (Val F1: 0.7472). Retraining...
+Step 1 Trained in 6.49s. Remaining samples: 70627
+
+--- Step 2: Binary Classification for 'Politics and society' vs Rest ---
+  Fitting Vectorizer Step 2 with max_features=40000...
+  Selecting best model for Politics and society...
+    - LogisticRegression: F1=0.7675
+    - MultinomialNB: F1=0.7901
+    - LinearSVM: F1=0.7673
+  -> Best model for Politics and society is MultinomialNB (Val F1: 0.7901). Retraining...
+Step 2 Trained in 6.79s. Remaining samples: 50627
+
+--- Step 3: Multi-class Classification for remaining classes ---
+  Fitting Vectorizer Step 3 with max_features=20000...
+    -> Training MultinomialNB for MultiClassVoting...
+    -> Training LogisticRegression_OVR for MultiClassVoting...
+    -> Training LinearSVM_OVR for MultiClassVoting...
+Step 3 Trained in 11.67s.
+
+Successfully trained 3-Step Cascade Classifier with Local TF-IDF!
+
+Predicting on test set...
+
+Total Training & Evaluation Time: 26.23 seconds
+Test Accuracy: 66.9021%
+Macro F1-Score: 59.1137%
+
+Classification Report:
+                      precision    recall  f1-score   support
+
+      Arts & Culture       0.85      0.26      0.40       653
+            Business       0.44      0.69      0.54      1479
+           Community       0.48      0.53      0.50      1400
+           Education       0.75      0.13      0.22       365
+       Entertainment       0.51      0.67      0.58      1477
+         Environment       0.52      0.35      0.42       698
+              Family       0.57      0.74      0.64      1400
+       Food & drinks       0.77      0.88      0.82      1400
+              Health       0.51      0.66      0.58      1400
+           Lifestyle       0.64      0.68      0.66      1400
+Politics and society       0.80      0.72      0.76      5000
+              Sports       0.82      0.77      0.80       985
+      Tech & Science       0.86      0.69      0.77      5000
+
+            accuracy                           0.67     22657
+           macro avg       0.66      0.60      0.59     22657
+        weighted avg       0.70      0.67      0.67     22657
+
+
+Saving 3-step cascade model data to cascade_model.pkl...
+Successfully exported 3-step cascade model!

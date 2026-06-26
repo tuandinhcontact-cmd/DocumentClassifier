@@ -2,11 +2,14 @@ import numpy as np
 from custom_models.logistic_regression import CustomLogisticRegression
 
 class CustomLinearSVM:
-    def __init__(self, lr=0.01, lambda_param=0.01, epochs=50, class_weight=None):
+    def __init__(self, lr=0.01, lambda_param=0.01, epochs=50, class_weight=None, beta1=0.9, beta2=0.999, eps=1e-8):
         self.lr = lr
         self.lambda_param = lambda_param  # Tham số kiểm soát Regularization (l2)
         self.epochs = epochs
         self.class_weight = class_weight
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
         self.w = None
         self.b = 0.0
         self.platt_model = None  # Mô hình Logistic Regression dùng để hiệu chuẩn Platt Scaling
@@ -29,9 +32,6 @@ class CustomLinearSVM:
             sample_weights = np.where(y_svm == 1, weight_pos, weight_neg)
         
         # Adam Optimizer parameters
-        beta1 = 0.9
-        beta2 = 0.999
-        epsilon = 1e-8
         mw = np.zeros(n_features)
         vw = np.zeros(n_features)
         mb = 0.0
@@ -47,27 +47,27 @@ class CustomLinearSVM:
             # Tính gradient của hàm loss
             if np.sum(margin_violation) > 0:
                 weighted_y_violation = y_svm * margin_violation * sample_weights
-                dw = self.lambda_param * self.w - (X.T.dot(weighted_y_violation) / n_samples)
+                dw = (self.lambda_param / n_samples) * self.w - (X.T.dot(weighted_y_violation) / n_samples)
                 db = -np.sum(weighted_y_violation) / n_samples
             else:
-                dw = self.lambda_param * self.w
+                dw = (self.lambda_param / n_samples) * self.w
                 db = 0.0
                 
             # Adam Update
-            mw = beta1 * mw + (1 - beta1) * dw
-            vw = beta2 * vw + (1 - beta2) * (dw ** 2)
+            mw = self.beta1 * mw + (1 - self.beta1) * dw
+            vw = self.beta2 * vw + (1 - self.beta2) * (dw ** 2)
             
-            mb = beta1 * mb + (1 - beta1) * db
-            vb = beta2 * vb + (1 - beta2) * (db ** 2)
+            mb = self.beta1 * mb + (1 - self.beta1) * db
+            vb = self.beta2 * vb + (1 - self.beta2) * (db ** 2)
             
-            mw_hat = mw / (1 - beta1 ** epoch)
-            vw_hat = vw / (1 - beta2 ** epoch)
-            mb_hat = mb / (1 - beta1 ** epoch)
-            vb_hat = vb / (1 - beta2 ** epoch)
+            mw_hat = mw / (1 - self.beta1 ** epoch)
+            vw_hat = vw / (1 - self.beta2 ** epoch)
+            mb_hat = mb / (1 - self.beta1 ** epoch)
+            vb_hat = vb / (1 - self.beta2 ** epoch)
             
             # Cập nhật trọng số
-            self.w -= self.lr * mw_hat / (np.sqrt(vw_hat) + epsilon)
-            self.b -= self.lr * mb_hat / (np.sqrt(vb_hat) + epsilon)
+            self.w -= self.lr * mw_hat / (np.sqrt(vw_hat) + self.eps)
+            self.b -= self.lr * mb_hat / (np.sqrt(vb_hat) + self.eps)
                     
         # 2. Hiệu chuẩn Platt Scaling (Platt's probabilistic calibration)
         # Tính toán giá trị quyết định f(x) = w^T x + b cho toàn bộ tập Train

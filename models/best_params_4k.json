@@ -1,0 +1,32 @@
+{
+  "tfidf": {
+    "max_features": 50000,
+    "ngram_range": [
+      1,
+      3
+    ],
+    "sublinear_tf": true,
+    "min_df": 2
+  },
+  "nb": {
+    "alpha": 0.1
+  },
+  "softmax": {
+    "lr": 0.01,
+    "epochs": 50
+  },
+  "lr": {
+    "lr": 0.01,
+    "epochs": 100
+  },
+  "svm": {
+    "lambda_param": 0.1,
+    "epochs": 50
+  },
+  "cv_scores": {
+    "nb": 0.6871939190422586,
+    "softmax": 0.7053880502266306,
+    "lr": 0.6663761917855142,
+    "svm": 0.6345769438640922
+  }
+}

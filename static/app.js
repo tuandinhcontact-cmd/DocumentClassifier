@@ -94,27 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Thêm hiệu ứng trễ cho từng phần tử xuất hiện tuần tự
             timelineItem.style.animationDelay = `${index * 0.15}s`;
             
-            // Format số phần trăm xác suất
-            const probPercent = (item.probability * 100).toFixed(1);
-            
             timelineItem.innerHTML = `
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
                     <div class="timeline-details">
-                        <h4>Bước ${item.stage}: Phân lớp "${item.class_name}"</h4>
+                        <h4>Mô hình ${item.stage}: ${item.model_name}</h4>
                         <p>
-                            Trạng thái: <strong>${item.status}</strong>
-                            ${item.feature_type && item.feature_type !== 'N/A' ? `
-                            <span class="feat-badge ${item.feature_type.toLowerCase()}">${item.feature_type.toUpperCase()}</span>
-                            <span class="size-info">(${item.class_size.toLocaleString()} mẫu)</span>
-                            ` : ''}
+                            Dự đoán: <strong>${item.class_name}</strong> (Trạng thái: ${item.status})
                         </p>
-                    </div>
-                    <div class="timeline-stats">
-                        <div class="prob-val">${probPercent}%</div>
-                        <div class="probability-bar-container">
-                            <div class="probability-bar" style="width: ${probPercent}%"></div>
-                        </div>
                     </div>
                 </div>
             `;

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>News Category Cascade Classifier</title>
+    <title>News Category Soft Voting Ensemble</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,16 +18,16 @@
         <header>
             <div class="logo">
                 <span class="logo-icon">⚡</span>
-                <h1>Cascade Classifier</h1>
+                <h1>Ensemble Classifier</h1>
             </div>
-            <p class="subtitle">Trực quan hóa quá trình phân tầng nhị phân phân cấp cho hơn 182,000 dữ liệu tin tức</p>
+            <p class="subtitle">Trực quan hóa quá trình phân loại bằng mô hình Soft Voting Ensemble cho hơn 190,000 dữ liệu tin tức</p>
         </header>
 
         <main class="grid-layout">
             <!-- Left Panel: Input -->
             <section class="card input-section">
                 <h2>Thử nghiệm tin tức mới</h2>
-                <p class="description">Điền tiêu đề và mô tả ngắn của tin tức để kiểm tra đường đi trong chuỗi Cascade.</p>
+                <p class="description">Điền tiêu đề và mô tả ngắn của tin tức để kiểm tra kết quả biểu quyết từ hội đồng mô hình.</p>
                 
                 <form id="classify-form">
                     <div class="input-group">
@@ -74,8 +74,8 @@
 
                 <!-- Cascade Timeline -->
                 <div class="card timeline-card hidden" id="timeline-card">
-                    <h2>Đường đi phân tầng (Cascade Traversal Path)</h2>
-                    <p class="description">Mô tả chi tiết quá trình kiểm thử tuần tự của các bộ phân loại nhị phân:</p>
+                    <h2>Biểu quyết của hội đồng mô hình (Ensemble Voting Details)</h2>
+                    <p class="description">Mô tả chi tiết quá trình xác suất dự đoán của từng mô hình thành phần:</p>
                     
                     <div class="timeline" id="timeline">
                         <!-- Will be populated dynamically by JavaScript -->
@@ -86,14 +86,12 @@
                 <div class="card empty-card" id="empty-card">
                     <div class="empty-icon">🔍</div>
                     <h3>Chưa có dữ liệu phân loại</h3>
-                    <p>Điền thông tin ở bảng bên trái hoặc chọn mẫu thử nghiệm nhanh để xem trực quan hóa đường đi Cascade.</p>
+                    <p>Điền thông tin ở bảng bên trái hoặc chọn mẫu thử nghiệm nhanh để xem trực quan hóa kết quả biểu quyết.</p>
                 </div>
             </section>
         </main>
 
-        <footer>
-            <p>Phát triển bởi Antigravity AI Code Assistant &copy; 2026. Tất cả mã nguồn mô hình đã được tối ưu hóa.</p>
-        </footer>
+
     </div>
 
     <script src="static/app.js"></script>

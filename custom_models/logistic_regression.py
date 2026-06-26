@@ -1,12 +1,15 @@
 import numpy as np
 
 class CustomLogisticRegression:
-    def __init__(self, lr=0.01, epochs=100, C=1.0, class_weight='balanced', solver='adam'):
+    def __init__(self, lr=0.01, epochs=100, C=1.0, class_weight='balanced', solver='adam', beta1=0.9, beta2=0.999, eps=1e-8):
         self.lr = lr
         self.epochs = epochs
         self.C = C  # Tham số kiểm soát điều chuẩn (Càng nhỏ L2 càng lớn)
         self.class_weight = class_weight
         self.solver = solver  # 'adam' hoặc 'gd'
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.eps = eps
         self.w = None
         self.b = 0.0
         
@@ -36,10 +39,6 @@ class CustomLogisticRegression:
         y_encoded = np.array(y)
         
         # 2. Huấn luyện bằng Adam Optimizer
-        beta1 = 0.9
-        beta2 = 0.999
-        eps = 1e-8
-        
         # Khởi tạo mô-men cho Adam
         m_w = np.zeros(n_features)
         v_w = np.zeros(n_features)
@@ -53,24 +52,24 @@ class CustomLogisticRegression:
             errors = predictions - y_encoded
             weighted_errors = errors * sample_weights
             
-            dw = (X.T.dot(weighted_errors) / n_samples) + (1.0 / self.C) * self.w
+            dw = (X.T.dot(weighted_errors) / n_samples) + (1.0 / (self.C * n_samples)) * self.w
             db = np.sum(weighted_errors) / n_samples
             
             # Cập nhật moving averages
-            m_w = beta1 * m_w + (1.0 - beta1) * dw
-            v_w = beta2 * v_w + (1.0 - beta2) * (dw ** 2)
-            m_b = beta1 * m_b + (1.0 - beta1) * db
-            v_b = beta2 * v_b + (1.0 - beta2) * (db ** 2)
+            m_w = self.beta1 * m_w + (1.0 - self.beta1) * dw
+            v_w = self.beta2 * v_w + (1.0 - self.beta2) * (dw ** 2)
+            m_b = self.beta1 * m_b + (1.0 - self.beta1) * db
+            v_b = self.beta2 * v_b + (1.0 - self.beta2) * (db ** 2)
             
             # Hiệu chuẩn bias correction
-            m_w_hat = m_w / (1.0 - beta1 ** t)
-            v_w_hat = v_w / (1.0 - beta2 ** t)
-            m_b_hat = m_b / (1.0 - beta1 ** t)
-            v_b_hat = v_b / (1.0 - beta2 ** t)
+            m_w_hat = m_w / (1.0 - self.beta1 ** t)
+            v_w_hat = v_w / (1.0 - self.beta2 ** t)
+            m_b_hat = m_b / (1.0 - self.beta1 ** t)
+            v_b_hat = v_b / (1.0 - self.beta2 ** t)
             
             # Cập nhật trọng số
-            self.w -= (self.lr / (np.sqrt(v_w_hat) + eps)) * m_w_hat
-            self.b -= (self.lr / (np.sqrt(v_b_hat) + eps)) * m_b_hat
+            self.w -= (self.lr / (np.sqrt(v_w_hat) + self.eps)) * m_w_hat
+            self.b -= (self.lr / (np.sqrt(v_b_hat) + self.eps)) * m_b_hat
             
         return self
         
