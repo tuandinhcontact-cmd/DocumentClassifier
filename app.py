@@ -94,17 +94,39 @@ def predict():
             'status':           f'Model {name}',
         })
 
-    # Soft Voting result
+    # Lấy xác suất của Linear SVM chạy độc lập (Stage 3)
+    svm_model = model_data.get('svm_model')
+    if svm_model is not None:
+        svm_probs = svm_model.predict_proba(X_vec)[0]
+        svm_pred_idx = np.argmax(svm_probs)
+        svm_cls_arr = svm_model.classes if hasattr(svm_model, 'classes') else model.classes
+        svm_pred_class = svm_cls_arr[svm_pred_idx]
+        svm_confidence = float(svm_probs[svm_pred_idx])
+
+        path.append({
+            'stage':            len(model.estimators) + 1,
+            'model_name':       'LinearSVM_OVR',
+            'class_name':       svm_pred_class,
+            'probability':      svm_confidence,
+            'matched':          svm_pred_class == final_class,
+            'status':           'Model LinearSVM_OVR (Độc lập)',
+        })
+
+    # Soft Voting result (Stage 4)
     ensemble_probs = model.predict_proba(X_vec)[0]
-    cls_arr = next((e.classes for _, e in model.estimators if hasattr(e, 'classes')), model.classes)
     final_idx = np.argmax(ensemble_probs)
+    
+    stage_idx = len(model.estimators) + 1
+    if svm_model is not None:
+        stage_idx += 1
+
     path.append({
-        'stage':       len(model.estimators) + 1,
+        'stage':       stage_idx,
         'model_name':  'Soft Voting',
         'class_name':  final_class,
         'probability': float(ensemble_probs[final_idx]),
         'matched':     True,
-        'status':      'Kết quả Soft Voting cuối cùng',
+        'status':      'Kết quả Soft Voting (NB + Softmax)',
     })
 
     return jsonify({

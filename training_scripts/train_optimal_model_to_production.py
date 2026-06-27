@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from imblearn.over_sampling import SMOTE
 
-from custom_models.logistic_regression import CustomLogisticRegression
+
 from custom_models.softmax_regression import CustomSoftmaxRegression
 from custom_models.multinomial_nb import CustomMultinomialNB
 from custom_models.linear_svm import CustomLinearSVM
@@ -108,29 +108,34 @@ def main():
     X_train_smote, y_train_smote = smote.fit_resample(X_train_vec, y_train)
     print(f"   Xong trong {time.time() - t_smote:.1f}s | Kích thước mới: {X_train_smote.shape[0]:,} mẫu")
 
-    # ── 7. Huấn luyện Soft Voting Ensemble ──────────────────────────────
-    print("\n7. Huấn luyện Soft Voting Ensemble (NB + Softmax + SVM)...")
+    # ── 7. Huấn luyện các mô hình sản phẩm ──────────────────────────────
+    print("\n7. Huấn luyện các mô hình sản phẩm (Ensemble bộ đôi & Linear SVM độc lập)...")
     t0 = time.time()
 
+    # A. Bộ đôi Ensemble (NB + Softmax)
+    print("   -> Huấn luyện Ensemble (NB + Softmax)...")
     nb_est = CustomMultinomialNB(**nb_p)
     lr_est = CustomSoftmaxRegression(
         lr=softmax_p["lr"], epochs=softmax_p["epochs"],
         C=1.0, class_weight=None, beta1=0.9, beta2=0.999, verbose=True
     )
+    ensemble = FlatSoftVotingClassifier(estimators=[
+        ('MultinomialNB', nb_est),
+        ('SoftmaxRegression', lr_est),
+    ])
+    ensemble.fit(X_train_smote, y_train_smote)
+    
+    # B. Linear SVM (Chạy độc lập)
+    print("   -> Huấn luyện Linear SVM OVR độc lập...")
     svm_est = CustomOneVsRestClassifier(
         CustomLinearSVM(
             lr=0.01, lambda_param=svm_p["lambda_param"], epochs=svm_p["epochs"],
             class_weight=None, beta1=0.8, beta2=0.999
         )
     )
-    ensemble = FlatSoftVotingClassifier(estimators=[
-        ('MultinomialNB', nb_est),
-        ('SoftmaxRegression', lr_est),
-        ('LinearSVM_OVR', svm_est),
-    ])
+    svm_est.fit(X_train_smote, y_train_smote)
     
-    ensemble.fit(X_train_smote, y_train_smote)
-    print(f"   Huấn luyện xong trong {time.time() - t0:.1f}s")
+    print(f"   Huấn luyện xong tất cả trong {time.time() - t0:.1f}s")
     
     # Đánh giá trên tập Test
     y_pred = ensemble.predict(X_test_vec)
@@ -152,6 +157,7 @@ def main():
     model_data = {
         'vectorizer': vectorizer,
         'model': ensemble,
+        'svm_model': svm_est,
         'best_params': {
             'tfidf': tfidf_p,
             'nb': nb_p,

@@ -44,6 +44,14 @@ case "$1" in
         echo "🔄 Chạy train_individual_models_comparison_12k.py..."
         "$PYTHON" training_scripts/train_individual_models_comparison_12k.py
         ;;
+    pilot_tfidf)
+        echo "🔄 Chạy pilot_tfidf_softmax_4k.py..."
+        "$PYTHON" training_scripts/pilot_tfidf_softmax_4k.py
+        ;;
+    pilot_w2v)
+        echo "🔄 Chạy pilot_w2v_softmax_4k.py..."
+        "$PYTHON" training_scripts/pilot_w2v_softmax_4k.py
+        ;;
     ensemble)
         echo "🔄 Chạy train_flat_ensemble.py..."
         "$PYTHON" training_scripts/train_flat_ensemble.py
@@ -65,6 +73,8 @@ case "$1" in
         echo "    bash run.sh merge       → Gộp 6 nguồn → data/merged_dataset.csv"
         echo ""
         echo "  Bước 2 — Huấn luyện mô hình:"
+        echo "    bash run.sh pilot_tfidf → Thử nghiệm TF-IDF + Softmax (Cap 4k)"
+        echo "    bash run.sh pilot_w2v   → Thử nghiệm Word2Vec + Softmax (Cap 4k)"
         echo "    bash run.sh compare     → So sánh từng mô hình (Cap 20k/nhãn)"
         echo "    bash run.sh compare4k   → So sánh từng mô hình (Cap 4k/nhãn)"
         echo "    bash run.sh compare12k  → So sánh từng mô hình (Cap 12k/nhãn)"

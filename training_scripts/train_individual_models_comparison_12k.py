@@ -22,7 +22,7 @@ def clean_text(text):
     words = text.split()
     return " ".join(w for w in words if w not in ENGLISH_STOP_WORDS)
 
-from custom_models.logistic_regression import CustomLogisticRegression
+
 from custom_models.softmax_regression import CustomSoftmaxRegression
 from custom_models.multinomial_nb import CustomMultinomialNB
 from custom_models.linear_svm import CustomLinearSVM
@@ -172,21 +172,7 @@ def main():
         cv=3, label="SoftmaxRegression"
     )
 
-    # C. Logistic Regression (OVR)
-    lr_param_grid = {
-        'lr': [0.001, 0.01],
-        'epochs': [50, 100]
-    }
-    best_lr_params, best_lr_score, _ = grid_search_cv(
-        lambda lr, epochs: CustomOneVsRestClassifier(
-            CustomLogisticRegression(solver='adam', lr=lr, epochs=epochs, class_weight='balanced')
-        ),
-        lr_param_grid,
-        X_train_vec, y_train_sampled,
-        cv=3, label="LogisticRegression OVR"
-    )
-
-    # D. Linear SVM (OVR)
+    # C. Linear SVM (OVR)
     svm_param_grid = {
         'lambda_param': [0.001, 0.01, 0.1],
         'epochs': [50, 100]
@@ -204,7 +190,6 @@ def main():
     print(" KẾT QUẢ GRID SEARCH (12K CAPPING):")
     print(f"  - Best NB      : alpha={best_nb_params['alpha']} (CV F1={best_nb_score:.4f})")
     print(f"  - Best Softmax : lr={best_softmax_params['lr']}, epochs={best_softmax_params['epochs']} (CV F1={best_softmax_score:.4f})")
-    print(f"  - Best LR OVR  : lr={best_lr_params['lr']}, epochs={best_lr_params['epochs']} (CV F1={best_lr_score:.4f})")
     print(f"  - Best SVM OVR : lambda={best_svm_params['lambda_param']}, epochs={best_svm_params['epochs']} (CV F1={best_svm_score:.4f})")
     print("=" * 70)
 
@@ -215,12 +200,10 @@ def main():
         'tfidf': tfidf_params,
         'nb':      best_nb_params,
         'softmax': best_softmax_params,
-        'lr':      best_lr_params,
         'svm':     best_svm_params,
         'cv_scores': {
             'nb':      best_nb_score,
             'softmax': best_softmax_score,
-            'lr':      best_lr_score,
             'svm':     best_svm_score,
         }
     }
@@ -252,17 +235,7 @@ def main():
     f1_softmax = f1_score(y_test, y_pred_softmax, average='macro', zero_division=0)
     print(f"      Xong SoftmaxRegression ({time.time() - t0:.1f}s) | Test Acc: {acc_softmax:.4%}, Test Macro F1: {f1_softmax:.4%}")
 
-    # 6.3. Logistic Regression (OVR)
-    print("   -> Đang huấn luyện LogisticRegression OVR...")
-    t0 = time.time()
-    lr_final = CustomOneVsRestClassifier(
-        CustomLogisticRegression(solver='adam', class_weight='balanced', **best_lr_params)
-    )
-    lr_final.fit(X_train_vec, y_train_sampled)
-    y_pred_lr = lr_final.predict(X_test_vec)
-    acc_lr = accuracy_score(y_test, y_pred_lr)
-    f1_lr = f1_score(y_test, y_pred_lr, average='macro', zero_division=0)
-    print(f"      Xong LogisticRegression OVR ({time.time() - t0:.1f}s) | Test Acc: {acc_lr:.4%}, Test Macro F1: {f1_lr:.4%}")
+
 
     # 6.4. Linear SVM (OVR)
     print("   -> Đang huấn luyện LinearSVM OVR (bao gồm Platt Scaling)...")
@@ -289,10 +262,9 @@ def main():
     ensemble = FlatSoftVotingClassifier(estimators=[
         ('MultinomialNB', nb_est),
         ('SoftmaxRegression', softmax_est),
-        ('LinearSVM_OVR', svm_est),
     ])
     
-    print("   -> Đang huấn luyện Ensemble (NB + Softmax + SVM)...")
+    print("   -> Đang huấn luyện Ensemble (NB + Softmax)...")
     ensemble.fit(X_train_vec, y_train_sampled)
     y_pred_ens = ensemble.predict(X_test_vec)
     acc_ens = accuracy_score(y_test, y_pred_ens)
@@ -307,9 +279,8 @@ def main():
     print("-" * 70)
     print(f" {'Multinomial Naive Bayes':32s} | {acc_nb:11.4%} | {f1_nb:11.4%}")
     print(f" {'Softmax Regression':32s} | {acc_softmax:11.4%} | {f1_softmax:11.4%}")
-    print(f" {'Logistic Regression OVR':32s} | {acc_lr:11.4%} | {f1_lr:11.4%}")
     print(f" {'Linear SVM OVR (Platt)':32s} | {acc_svm:11.4%} | {f1_svm:11.4%}")
-    print(f" {'Soft Voting Ensemble (3 Models)':32s} | {acc_ens:11.4%} | {f1_ens:11.4%}")
+    print(f" {'Soft Voting Ensemble (2 Models)':32s} | {acc_ens:11.4%} | {f1_ens:11.4%}")
     print("=" * 70)
 
     # In chi tiết Báo cáo phân loại của từng mô hình
@@ -321,8 +292,7 @@ def main():
     print("--- Softmax Regression ---")
     print(classification_report(y_test, y_pred_softmax, zero_division=0))
     
-    print("--- Logistic Regression OVR ---")
-    print(classification_report(y_test, y_pred_lr, zero_division=0))
+
     
     print("--- Linear SVM OVR ---")
     print(classification_report(y_test, y_pred_svm, zero_division=0))
@@ -339,14 +309,12 @@ def main():
             'tfidf': tfidf_params,
             'nb': best_nb_params,
             'softmax': best_softmax_params,
-            'lr': best_lr_params,
             'svm': best_svm_params,
         },
         'classes': list(np.unique(y)),
         'comparison_metrics': {
             'nb':       {'accuracy': acc_nb,      'macro_f1': f1_nb},
             'softmax':  {'accuracy': acc_softmax,  'macro_f1': f1_softmax},
-            'lr':       {'accuracy': acc_lr,       'macro_f1': f1_lr},
             'svm':      {'accuracy': acc_svm,      'macro_f1': f1_svm},
             'ensemble': {'accuracy': acc_ens,      'macro_f1': f1_ens}
         }
